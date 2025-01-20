@@ -50,8 +50,8 @@ def __get_max(curr_out, start, end):
 
 
 def compute_one_side(data, edges, model, evaluation=False, same=False):
-    x = torch.autograd.Variable(torch.from_numpy(data).float()).cuda()
-    x_rc = torch.autograd.Variable(torch.from_numpy(np.array(data[:,::-1,::-1])).float()).cuda()
+    x = torch.autograd.Variable(torch.from_numpy(data).float())#.cuda()
+    x_rc = torch.autograd.Variable(torch.from_numpy(np.array(data[:,::-1,::-1])).float())#.cuda()
     edges = np.array(edges) - edges[0]
     combined = []
     if not same:
@@ -90,10 +90,10 @@ def compute_factor_output(left_data, left_edges, right_data, right_edges,
     left_out = compute_one_side(curr_left_data, curr_left_edges, factor_model, evaluation, same=same)
     right_out = compute_one_side(curr_right_data, curr_right_edges, factor_model, evaluation, same=same)
     if legacy:
-        curr_labels = torch.autograd.Variable(torch.from_numpy(curr_labels).long()).cuda()
+        curr_labels = torch.autograd.Variable(torch.from_numpy(curr_labels).long())#.cuda()
     else:
-        curr_labels = torch.autograd.Variable(torch.from_numpy(curr_labels).float()).cuda()
-    curr_dists = torch.autograd.Variable(torch.from_numpy(np.array(curr_dists, dtype='float32'))).cuda()
+        curr_labels = torch.autograd.Variable(torch.from_numpy(curr_labels).float())#.cuda()
+    curr_dists = torch.autograd.Variable(torch.from_numpy(np.array(curr_dists, dtype='float32')))#.cuda()
     return end, left_out, right_out, curr_dists, curr_labels
 
 
@@ -273,8 +273,8 @@ def train(model, classifier, data_pre, model_name, retraining, use_existing=None
         model.load_state_dict(torch.load('%s/%s.model.pt' % (model_dir,model_name)))
         classifier.load_state_dict(torch.load("%s/%s.classifier.pt" % (model_dir,model_name)))
 
-    model.cuda()
-    classifier.cuda()
+    model#.cuda()
+    classifier#.cuda()
 
     if not (finetune and not generate_data):
         (train_data, train_left_data, train_right_data,
@@ -349,11 +349,11 @@ def train(model, classifier, data_pre, model_name, retraining, use_existing=None
 
     if use_weight_for_training is not None:
         if use_weight_for_training == 'balanced':
-            weights = torch.FloatTensor([1, max(1, (len(train_labels) - np.sum(train_labels)) / np.sum(train_labels))]).cuda()
+            weights = torch.FloatTensor([1, max(1, (len(train_labels) - np.sum(train_labels)) / np.sum(train_labels))])#.cuda()
         elif type(use_weight_for_training) == int or type(use_weight_for_training) == float:
-            weights = torch.FloatTensor([1, use_weight_for_training]).cuda()
+            weights = torch.FloatTensor([1, use_weight_for_training])#.cuda()
     else:
-        weights = torch.FloatTensor([1, 1]).cuda()
+        weights = torch.FloatTensor([1, 1])#.cuda()
 
     logging.info(str(weights))
     #loss_fn = torch.nn.BCEWithLogitsLoss(weight=weights)
@@ -402,10 +402,10 @@ def train(model, classifier, data_pre, model_name, retraining, use_existing=None
         while i < len(train_labels):
             if finetune:
                 end = i + 400
-                left_out = torch.autograd.Variable(torch.from_numpy(left_data_store[i:end])).cuda()
-                right_out = torch.autograd.Variable(torch.from_numpy(right_data_store[i:end])).cuda()
-                curr_dists = torch.autograd.Variable(torch.from_numpy(dist_data_store[i:end])).cuda()
-                curr_labels = torch.autograd.Variable(torch.from_numpy(labels_data_store[i:end]).long()).cuda()
+                left_out = torch.autograd.Variable(torch.from_numpy(left_data_store[i:end]))#.cuda()
+                right_out = torch.autograd.Variable(torch.from_numpy(right_data_store[i:end]))#.cuda()
+                curr_dists = torch.autograd.Variable(torch.from_numpy(dist_data_store[i:end]))#.cuda()
+                curr_labels = torch.autograd.Variable(torch.from_numpy(labels_data_store[i:end]).long())#.cuda()
             else:
                 end, left_out, right_out, curr_dists, curr_labels = compute_factor_output(train_left_data,
                                                                                           train_left_edges,

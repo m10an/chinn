@@ -45,9 +45,9 @@ cluster_inters_both_dnase=${datadir}/${name}.clustered_interactions.both_dnase.b
 cat ${infile} \
     | awk 'BEGIN{FS=OFS="\t"}{printf("%s\t%s\t%s\n%s\t%s\t%s\n", $1, $2, $3, $4, $5, $6)}' \
     | sort -k1,1 -k2,2n -k3,3n \
-    | mergeBed -d ${dist}  > ${merged_anchors}
+    | singularity exec tools.sif mergeBed -d ${dist}  > ${merged_anchors}
 
-pairToBed -a ${infile} -b ${merged_anchors} -type both \
+singularity exec tools.sif pairToBed -a ${infile} -b ${merged_anchors} -type both \
     | python ${dir}/../chinn/groupBed.py -g 1 2 3 4 5 6 7 -c 8 9 10 -o collapse  \
     | cut -f 7- \
     | sed 's/,/ /g' \
@@ -57,7 +57,7 @@ pairToBed -a ${infile} -b ${merged_anchors} -type both \
     | python ${dir}/../chinn/groupBed.py -g 1 2 3 4 5 6 -c 7 \
     | sed 's/\..*$//g' > ${cluster_inters}
 
-pairToBed -a ${cluster_inters} -b ${dnase}  -type both \
+singularity exec tools.sif pairToBed -a ${cluster_inters} -b ${dnase}  -type both \
     | cut -f 1-7 \
     | uniq > ${cluster_inters_both_dnase}
 
