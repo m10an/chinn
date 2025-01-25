@@ -17,9 +17,15 @@ git clone https://github.com/mjflab/chinn
 #enter the directory. Use the repository's root directory as working directory.
 cd chinn
 ```
-The Python version tested is 3.6.5. The environment is specified in `environment.yaml`, 
+The Python version tested is 3.8. The environment is specified in `environment.yaml`, 
 which can be used by Anaconda to create
 a new environment by `conda env create -f environment.yml`.
+
+download singularity images for data preprocessing
+```shell
+singularity pull tools.sif library://m10an/genomics/tools
+singularity pull samtools.sif library://millironx/default/samtools
+```
 
 ### Dataset:
 The models were trained on GM12878 CTCF, GM12878 RNA Pol II, HelaS3 CTCF, K562 RNA Pol II, 
@@ -77,6 +83,10 @@ __Using GM12878 CTCF dataset as an example.__
 ```shell
 # prepare output directory
 mkdir out_dir
+
+bash hg19.sh out_dir/hg19.sh
+singularity exec samtools.sif samtools faidx out_dir/hg19.sh
+
 bash preprocess/pipe.sh data/gm12878_ctcf/TangZ_etal.Cell2015.ChIA-PET_GM12878_CTCF.published_PET_clusters.no_black.txt \
                         data/gm12878_ctcf/wgEncodeAwgDnaseUwdukeGm12878UniPk.narrowPeak \
                         data/gm12878_ctcf/wgEncodeAwgTfbsBroadGm12878CtcfUniPk.narrowPeak \
@@ -153,7 +163,7 @@ For GM12878 CTCF dataset
 PYTHONPATH=. python data_preparation.py -m 1000 -e 500 \
                       --pos_files out_dir/gm12878_ctcf.clustered_interactions.both_dnase.bedpe \
                       --neg_files out_dir/gm12878_ctcf.neg_pairs_5x.from_singleton_inter_tf_random.bedpe \
-                      -g data/hg19.fa \
+                      -g out_dir/hg19.fa \
                       -n gm12878_ctcf_distance_matched -o out_dir
 ```
 Adding `PYTHONPATH=.` will include the current working directory in the search path and
@@ -207,16 +217,16 @@ gm12878_ctcf_model_re.model.pt # The CNN model after retraining
 gm12878_ctcf_model_re.classifier.pt  # The classifer part after retraining.
 ```
 
-### Extended models
+### Extended models (TODO: test in updated environment)
 #### Prepare data for training classifiers using extended datasets.
 First generate one-hot encoded data.
 ```shell
 PYTHONPATH=. python data_preparation.py -m 1000 -e 500 \
-                --pos_files out_dir/gm12878_ctcf.clustered_interactions.both_dnase.bedpe \
-                --neg_files out_dir/gm12878_ctcf.neg_pairs_5x.from_singleton_inter_tf_random.bedpe \
-                            out_dir/gm12878_ctcf.extended_negs_with_intra.bedpe \
-                -g path/to/hg19.fa \
-                -n gm12878_ctcf_extended -o out_dir
+    --pos_files out_dir/gm12878_ctcf.clustered_interactions.both_dnase.bedpe \
+    --neg_files out_dir/gm12878_ctcf.neg_pairs_5x.from_singleton_inter_tf_random.bedpe \
+                out_dir/gm12878_ctcf.extended_negs_with_intra.bedpe \
+    -g out_dir/hg19.fa \
+    -n gm12878_ctcf_extended -o out_dir
 ```
 This will produce these files for train, validation, and testing in the output directory:
 ```shell
@@ -248,10 +258,11 @@ For the GM12878 CTCF dataset, we will do the following
 ```shell
 for i in train valid test; 
 do 
-  PYTHONPATH=. python generate_factor_output.py \
-                  out_dir/gm12878_ctcf_model_re.model.pt \
+  python generate_factor_output.py \
+                  out_dir/gm12878_ctcf_model.model.pt \
                   out_dir/gm12878_ctcf_distance_matched_singleton_tf_with_random_neg_seq_data_length_filtered_${i}.hdf5 \
-                  gm1278_ctcf_${i}; 
+                  gm1278_ctcf_${i} \
+                  out_dir;
 done
 ```
 This will generate the following files in the output directory:
@@ -286,7 +297,7 @@ optional arguments:
 
 For the GM12878 CTCF example, the command is as follows:
 ```shell
-PYTHONPATH=. python train_extended/train_extended.py out_dir gm12878_ctcf_extended_with_intra out_dir/
+PYTHONPATH=. python train_extended/train_extended.py out_dir gm1278_ctcf out_dir/
 ```
 This command will produce several files in the model directory:
 ```text
@@ -333,7 +344,7 @@ optional arguments:
 
 On the Gm12878 CTCF extended test dataset, we can run
 ```shell
-PYTHONPATH=. python predict.py -m out_dir/gm12878_ctcf_model_re.model.pt \
+PYTHONPATH=. python predict.py -m out_dir/gm12878_ctcf_model.model.pt \
                 -c out_dir/gm12878_ctcf_extended_with_intra_depth6.gbt.pkl \
                 --data_file out_dir/gm12878_ctcf_extended_singleton_tf_with_random_neg_seq_data_length_filtered_test.hdf5 \
                 --output_pre out_dir/gm12878_ctcf_extended_test -d
