@@ -1,5 +1,5 @@
 '''
-This file contains functions to produce hdf5 files for training/validation/test.
+generates hdf5 training/validation/test files for prediction
 The validation chroms are 5, 14
 The test chromosomes are 4, 7, 8, 11
 '''
